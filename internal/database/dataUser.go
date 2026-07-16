@@ -97,3 +97,30 @@ func FindProfileById(key int) (*Profile, error) {
 	}
 	return &profile, nil
 }
+
+// OTP
+func FindOtpByUserId(key string) (*Otp, error) {
+	var otp Otp
+
+	query := `
+		SELECT "o"."id", "o"."code", "o"."used", "o"."created_at", "o"."expired_at"
+		FROM "otp" "o"
+		JOIN "users_otp" "uo" ON "uo"."id_otp" = "o"."id"
+		WHERE "uo"."id_user" = $1 
+		  AND "o"."used" = FALSE 
+		  AND NOW() < "o"."expired_at"
+		ORDER BY "o"."created_at" DESC
+		LIMIT 1;`
+
+	conn, res := GetSingle(query, key)
+
+	defer conn.Close(context.Background())
+
+	err := res.Scan(&otp.ID, &otp.Code, &otp.Used, &otp.CreatedAt, &otp.ExpiredAt)
+	if err != nil {
+		fmt.Println("Gagal mengambil data OTP atau OTP sudah tidak berlaku:", err)
+		panic(err.Error())
+	}
+
+	return &otp, nil
+}
