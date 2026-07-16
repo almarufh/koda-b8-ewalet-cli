@@ -1,24 +1,34 @@
+-- Table USERS
+
 CREATE TABLE "users" (
-    "id" bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    "username" VARCHAR(20) NOT NULL UNIQUE,
+    "id" VARCHAR(13) NOT NULL UNIQUE PRIMARY KEY,
     "email" VARCHAR(40) NOT NULL UNIQUE,
-    "password" VARCHAR(40) NOT NULL,
+    "password" VARCHAR(60) NOT NULL,
     "pin" VARCHAR(6),
-    "created_at" TIMESTAMP DEFAULT NOW(),
-    "updated_at" TIMESTAMP DEFAULT NOW()
+    "created_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+
+-- Table BALANCES
 
 CREATE TABLE "balances" (
     "id" bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    "balance" NUMERIC(15,2) NOT NULL DEFAULT 0.00,
-    "created_at" TIMESTAMP DEFAULT NOW(),
-    "updated_at" TIMESTAMP DEFAULT NOW()
+    "balance" bigint NOT NULL DEFAULT 0,
+    "created_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+
+-- Table USERS_BALANCES
+
 CREATE TABLE "users_balances" (
-    "id_user" bigint  REFERENCES "users"("id"),
+    "id_user" VARCHAR(13) REFERENCES "users"("id"),
     "id_balance" bigint  REFERENCES "balances"("id")
 );
+
+
+-- Table PROFILES
 
 CREATE TABLE "profiles" (
     "id" bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -27,85 +37,133 @@ CREATE TABLE "profiles" (
     "date_of_birth" DATE NOT NULL,
     "address" TEXT,
     "mother" VARCHAR(40),
-    "created_at" TIMESTAMP DEFAULT NOW(),
-    "updated_at" TIMESTAMP DEFAULT NOW()
+    "created_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+
+-- Table USERS_PROFILES
+
 CREATE TABLE "users_profiles" (
-    "id_user" bigint  REFERENCES "users"("id"),
+    "id_user" VARCHAR(13) REFERENCES "users"("id"),
     "id_profile" bigint  REFERENCES "profiles"("id")
 );
 
 CREATE TABLE "otp" (
     "id" bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    "created_at" TIMESTAMP DEFAULT NOW(),
-    "updated_at" TIMESTAMP DEFAULT NOW()
-)
+    "code" VARCHAR(6) NOT NULL,
+    "used" BOOLEAN DEFAULT FALSE,
+    "created_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    "expired_at" TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '5 minutes') NOT NULL
+);
 
+CREATE TABLE "users_otp" (
+    "id_user" VARCHAR(13) REFERENCES "users"("id"),
+    "id_otp" bigint  REFERENCES "otp"("id")
+);
 
+DROP TABLE "users_otp";
+-- Daftar TABLE
 SELECT * FROM "users";
 SELECT * FROM "balances";
 SELECT * FROM "users_balances";
 SELECT * FROM "profiles";
 SELECT * FROM "users_profiles";
 SELECT * FROM "otp"
-DROP TABLE "users", "balances", "users_balances", "profiles", "users_profiles";
+DROP TABLE "users", "balances", "users_balances", "profiles", "users_profiles", "otp";
+
+DROP SCHEMA public CASCADE; 
+CREATE SCHEMA public;
 
 CREATE TABLE "otp" (
     "id" bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "created_at" TIMESTAMP DEFAULT NOW(),
     "updated_at" TIMESTAMP DEFAULT NOW()
+);
+
+
+-- Create User and default balance
+
+
+-- users, balances, users_balances
+-- Lebih dari satu data
+
+WITH "new_user" AS (
+    INSERT INTO "users" ("id", "email", "password", "pin") 
+    VALUES 
+        ('082393468568', 'hidayatmaruf99@gmail.com', 'pwd123', '112233'),
+        ('085399376716', 'zulaikha529@gmail.com', 'pwd1234', '112244')
+    RETURNING "id"
+),
+"new_balance" AS (
+    INSERT INTO "balances" ("balance") 
+    VALUES 
+        (20000), 
+        (10000)
+    RETURNING "id"
+),
+"ranked_user" AS (
+    SELECT "id", row_number() OVER () as "rn" FROM "new_user"
+),
+"ranked_balance" AS (
+    SELECT "id", row_number() OVER () as "rn" FROM "new_balance"
 )
+INSERT INTO "users_balances" ("id_user", "id_balance")
+SELECT "u"."id", "b"."id" 
+FROM "ranked_user" "u"
+JOIN "ranked_balance" "b" ON "u"."rn" = "b"."rn";
+
+-- Satu Data
+WITH "new_user" AS (
+    INSERT INTO "users" ("id", "email", "password", "pin") 
+    VALUES 
+        ('082393468568', 'hidayatmaruf99@gmail.com', 'pwd123', '112233')
+    RETURNING "id"
+),
+"new_balance" AS (
+    INSERT INTO "balances" ("balance") 
+    VALUES 
+        (20000)
+    RETURNING "id"
+)
+INSERT INTO "users_balances" ("id_user", "id_balance")
+SELECT "new_user"."id", "new_balance"."id" 
+FROM "new_user", "new_balance";
 
 
 
+-- profiles, users_profiles
+-- Satu data
+WITH "new_user" AS (
+    INSERT INTO "profiles" ("first_name", "last_name", "date_of_birth", "address", "mother")
+    VALUES ('Al-Maruf', 'Hidayat', '1999-08-18', 'Jl. Jenderal Sudirman No. 10', 'Lusiyah')
+    RETURNING "id"
+)
+INSERT INTO "users_profiles" ("id_user", "id_profile")
+SELECT '082393468568', "new_user"."id"
+FROM "new_user";
+
+SELECT * FROM "profiles";
+SELECT * FROM "users_profiles";
+
+
+-- otp, users_otp
+WITH "new_otp" AS (
+    INSERT INTO "otp" ("code")
+    VALUES ('123456')
+    RETURNING "id"
+)
+INSERT INTO "users_otp" ("id_user", "id_otp")
+SELECT '082393468568', "new_otp"."id"
+FROM "new_otp";
+
+SELECT * FROM "otp";
+SELECT * FROM "users_otp";
+-- Selesai
 
 
 
-
-
-
-
-
--- INSERT INTO "users" ("first_name", "last_name", "age") VALUES
--- ('Bildan', 'Jauhary', 18);
-
--- INSERT INTO "users" ("first_name", "last_name") VALUES
--- ('almaruf', 'hidayat');
-
-
--- CREATE TABLE "auth_users" (
---     "id" bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
---     "id_user" bigint REFERENCES "users"("id"),
---     "hp" int NOT NULL,
---     "email" VARCHAR(40) NOT NULL,
---     "password" VARCHAR(70) NOT NULL
--- );
-
--- INSERT INTO "auth_users" ("id_user", "hp", )
-
--- CREATE TABLE "change_users" (
---     "id" bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
---     "id_users" bigint  REFERENCES "users"("id"),
---     "otp" integer NOT NULL,
---     "expired" boolean DEFAULT false,
---     "used" boolean DEFAULT false,
---     "createdAT" TIMESTAMP DEFAULT NOW()
--- );
-
--- CREATE TABLE "change_logs" (
---     "id" bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
---     "id_users" bigint REFERENCES "users"("id"),
---     "id_change" bigint REFERENCES "change_users"("id"),
---     "type"  varchar(40) NOT NULL,
---     "before"  varchar(40) NOT NULL,
---     "after"  varchar(40) NOT NULL,
---     "succes" boolean DEFAULT false,
---     "createdAT" TIMESTAMP DEFAULT NOW()
--- );
-
-
--- -- DROP TABLE users;
--- -- DROP TABLE auth_users;
--- -- DROP TABLE change_logs;
--- -- DROP TABLE change_users;
+-- Cek hasil pembuktian apakah ketiganya sudah terisi otomatis
+SELECT * FROM "users";
+SELECT * FROM "balances";
+SELECT * FROM "users_balances";
