@@ -26,13 +26,13 @@ func FindUserByUsername(key string) (*User, error) {
 func FindBalanceByUsername(key string) (*Balance, error) {
 	var balance Balance
 	query := `
-		SELECT "b"."balance" FROM "users" "u"
+		SELECT "b"."id", "b"."balance" FROM "users" "u"
 		JOIN "users_balances" "ub" ON "ub"."id_user" = "u"."username"
 		JOIN "balances" "b" ON "b"."id" = "ub"."id_balance"
 		WHERE "username" = $1;`
 	conn, res := GetSinggle(query, key)
 
-	err := res.Scan(&balance.Balance)
+	err := res.Scan(&balance.ID, &balance.Balance)
 	defer conn.Close(context.Background())
 
 	if err != nil {
