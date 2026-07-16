@@ -8,7 +8,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func Conn() (*pgx.Conn, error) {
+func Conn() *pgx.Conn {
 	err := godotenv.Load()
 
 	if err != nil {
@@ -21,5 +21,6 @@ func Conn() (*pgx.Conn, error) {
 	if err != nil {
 		panic(err.Error())
 	}
-	return conn, err
+
+	return conn
 }
