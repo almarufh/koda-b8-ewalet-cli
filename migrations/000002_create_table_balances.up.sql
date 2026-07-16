@@ -1,0 +1,6 @@
+CREATE TABLE "balances" (
+    "id" bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    "balance" bigint NOT NULL DEFAULT 0,
+    "created_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);

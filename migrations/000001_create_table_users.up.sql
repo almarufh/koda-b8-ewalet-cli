@@ -1,0 +1,8 @@
+CREATE TABLE "users" (
+    "id" VARCHAR(13) NOT NULL UNIQUE PRIMARY KEY,
+    "email" VARCHAR(40) NOT NULL UNIQUE,
+    "password" VARCHAR(60) NOT NULL,
+    "pin" VARCHAR(6),
+    "created_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
